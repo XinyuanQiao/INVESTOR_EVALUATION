@@ -26,6 +26,7 @@
     nValue: document.getElementById("nValue"),
     potTargetValue: document.getElementById("potTargetValue"),
     capValue: document.getElementById("capValue"),
+    settlementDate: document.getElementById("settlementDate"),
     tbody: document.getElementById("tbody"),
     addRowBtn: document.getElementById("addRowBtn"),
     calcBtn: document.getElementById("calcBtn"),
@@ -105,9 +106,32 @@
     return out;
   }
 
+  function parseDateInput(value) {
+    const s = String(value ?? "").trim();
+    if (!s) return null;
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function getAnnualizationPower() {
+    // If settlement date is provided, annualize by actual days from quarter start to settlement date.
+    // Otherwise fall back to quarterly annualization (4 quarters/year).
+    const d = parseDateInput(el.settlementDate?.value);
+    if (!d) return 4;
+
+    const y = d.getFullYear();
+    const m = d.getMonth(); // 0-11
+    const qStartMonth = Math.floor(m / 3) * 3;
+    const qStart = new Date(y, qStartMonth, 1);
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const days = Math.floor((d.getTime() - qStart.getTime()) / msPerDay) + 1;
+    if (!Number.isFinite(days) || days <= 0) return 4;
+    return 365 / days;
+  }
+
   // ===== Core math =====
-  function computeP(R, MDD) {
-    const Ann = Math.pow(1 + R, 4) - 1;
+  function computeP(R, MDD, annPower) {
+    const Ann = Math.pow(1 + R, annPower) - 1;
     const Calmar = Ann / (MDD + PARAMS.mdd0);
     const Calmar_adj = Math.max(-0.9, Calmar);
     const FD = Math.max(0.3, 1 - 0.9 * MDD);
@@ -209,9 +233,11 @@
       return;
     }
 
+    const annPower = getAnnualizationPower();
+
     // Step 1: compute P and lnP
     const stats = rows.map((r) => {
-      const { Ann, Calmar, P } = computeP(r.R, r.MDD);
+      const { Ann, Calmar, P } = computeP(r.R, r.MDD, annPower);
       const lnP = Math.log(P);
       const isLeverageViolation = r.Leverage > PARAMS.leverageMax;
       return { ...r, Ann, Calmar, P, lnP, isLeverageViolation };
