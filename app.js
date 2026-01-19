@@ -31,7 +31,6 @@
     calcBtn: document.getElementById("calcBtn"),
     errors: document.getElementById("errors"),
     potValue: document.getElementById("potValue"),
-    roundingDiff: document.getElementById("roundingDiff"),
   };
 
   function initConstantsView() {
@@ -280,8 +279,6 @@
     const contribInt = contribFloat.map((x) => roundInt(x));
     const contribSumFloat = contribFloat.reduce((a, b) => a + b, 0);
     const Pot = contribInt.reduce((a, b) => a + b, 0);
-    // Positive means extra collected due to rounding; negative means less collected.
-    const roundingDiff = Pot - contribSumFloat;
 
     // Step 3: Credit weights in log-space.
     // Rule: if someone contributes this quarter (Contrib > 0), they should NOT receive Credit.
@@ -336,7 +333,6 @@
     });
 
     el.potValue.textContent = String(Pot);
-    el.roundingDiff.textContent = fmt(roundingDiff, 3);
   }
 
   // ===== Boot =====
