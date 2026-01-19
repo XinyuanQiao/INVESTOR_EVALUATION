@@ -8,6 +8,7 @@
 - **季度计算**：当季 `R / MDD` → `P`（含稳健标准化的 `median/MAD`）。
 - **年度计算（仅用于封顶）**：`CAP_Y=500`，每人需输入本年度已累计贡献 `YTD_Contrib`，用于 `CAP_Y_REMAIN = 500 - YTD_Contrib` 的封顶。
 - **杠杆硬规则**：当季 `Leverage > 2.0` → `Credit = 0`，且 `Contrib = min(100, CAP_Y_REMAIN)`（仍参与评分口径）。
+- **同季不“又交又拿”**：若当季 `Contrib > 0`，则当季 `Credit = 0`；奖池仅在当季 `Contrib = 0` 的成员间分配（通常为 Leader/并列 Leader）。
 - **金额取整**：`Contrib` 与 `Credit` 四舍五入到整数 AUD。`Credit` 使用“整数分配法”保证 `sum(Credit) = Pot`。
 
 ## 使用方式

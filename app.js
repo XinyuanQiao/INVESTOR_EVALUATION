@@ -283,32 +283,34 @@
     // Positive means extra collected due to rounding; negative means less collected.
     const roundingDiff = Pot - contribSumFloat;
 
-    // Step 3: Credit weights in log-space; leverage violators get 0 weight.
+    // Step 3: Credit weights in log-space.
+    // Rule: if someone contributes this quarter (Contrib > 0), they should NOT receive Credit.
+    // Leverage violators also receive 0 credit.
     const z = stats.map((s) => (s.lnP - C) / D);
     let creditW = stableSoftmax(z, PARAMS.k_credit);
-    creditW = creditW.map((w, i) => (stats[i].isLeverageViolation ? 0 : w));
+
+    const eligibleReceivers = stats
+      .map((s, i) => (!s.isLeverageViolation && contribInt[i] === 0 ? i : -1))
+      .filter((i) => i >= 0);
+
+    creditW = creditW.map((w, i) => (eligibleReceivers.includes(i) ? w : 0));
     const wSum = creditW.reduce((a, b) => a + b, 0);
     if (wSum > 0) creditW = creditW.map((w) => w / wSum);
 
     const creditFloat = creditW.map((w) => Pot * w);
-    const creditInt = allocateIntegersByRemainder(Pot, creditFloat);
+    let creditInt = allocateIntegersByRemainder(Pot, creditFloat);
 
-    // Ensure violators credit is exactly 0.
-    stats.forEach((s, i) => {
-      if (s.isLeverageViolation) creditInt[i] = 0;
-    });
+    // Enforce eligibility strictly.
+    creditInt = creditInt.map((v, i) => (eligibleReceivers.includes(i) ? v : 0));
 
-    // If forcing violators to 0 breaks sum (edge), fix by re-allocating among non-violators.
+    // If integer rounding / enforcement breaks sum (edge), re-allocate among eligible receivers.
     const sumCredit = creditInt.reduce((a, b) => a + b, 0);
-    if (sumCredit !== Pot) {
-      const eligible = stats.map((s, i) => (!s.isLeverageViolation ? i : -1)).filter((i) => i >= 0);
-      const eligibleFloats = eligible.map((i) => creditFloat[i]);
+    if (sumCredit !== Pot && eligibleReceivers.length > 0) {
+      const eligibleFloats = eligibleReceivers.map((i) => creditFloat[i]);
       const eligibleAlloc = allocateIntegersByRemainder(Pot, eligibleFloats);
-      eligible.forEach((idx, j) => {
+      creditInt = creditInt.map((_) => 0);
+      eligibleReceivers.forEach((idx, j) => {
         creditInt[idx] = eligibleAlloc[j];
-      });
-      stats.forEach((s, i) => {
-        if (s.isLeverageViolation) creditInt[i] = 0;
       });
     }
 
