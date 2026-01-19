@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>投资群季度奖惩与资金支配规则（Calmar）计算器</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>投资群季度奖惩与资金支配规则（Calmar）计算器</h1>
+        <p class="muted">
+          说明：收益率 <code>R</code> 与回撤 <code>MDD</code> 请用“小数”输入（例如 6% 写 <code>0.06</code>）。
+          年度口径：每人需填写本年度已累计贡献（YTD_Contrib），用于年度上限 <code>CAP_Y=500</code> 的剩余额度封顶。
+        </p>
+      </header>
+
+      <section class="card">
+        <h2>全局参数（已写死）</h2>
+        <div class="grid">
+          <label class="field">
+            <span>本年度起始日期（口径展示）</span>
+            <input id="yearStart" type="date" />
+          </label>
+          <label class="field">
+            <span>本季结算日（可选）</span>
+            <input id="settlementDate" type="date" />
+          </label>
+          <div class="field readonly">
+            <span>n</span>
+            <div class="value"><code id="nValue"></code></div>
+          </div>
+          <div class="field readonly">
+            <span>PotTarget (= 40×n)</span>
+            <div class="value"><code id="potTargetValue"></code> AUD</div>
+          </div>
+          <div class="field readonly">
+            <span>CAP_Q / CAP_Y</span>
+            <div class="value"><code id="capValue"></code> AUD</div>
+          </div>
+          <div class="field readonly">
+            <span>Leverage 上限</span>
+            <div class="value"><code>2.0</code></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="row">
+          <h2>输入（每人一行）</h2>
+          <div class="actions">
+            <button id="addRowBtn" type="button">新增一行</button>
+            <button id="calcBtn" type="button" class="primary">计算</button>
+          </div>
+        </div>
+
+        <div class="tableWrap">
+          <table id="dataTable">
+            <thead>
+              <tr>
+                <th>删除</th>
+                <th>Name</th>
+                <th>R</th>
+                <th>MDD</th>
+                <th>Leverage</th>
+                <th>YTD_Contrib</th>
+                <th>Ann</th>
+                <th>Calmar</th>
+                <th>P</th>
+                <th>Contrib (AUD)</th>
+                <th>Credit (AUD)</th>
+                <th>Net (AUD)</th>
+                <th>YTD_Contrib_After</th>
+                <th>CAP_Y_REMAIN_After</th>
+                <th>Flags</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="errors" class="errors" aria-live="polite"></div>
+
+        <div class="summary">
+          <div class="summaryItem">
+            <span class="muted">Pot（本季实际奖池）</span>
+            <strong><span id="potValue">-</span> AUD</strong>
+          </div>
+          <div class="summaryItem">
+            <span class="muted">Contrib 四舍五入误差（计入团建基金）</span>
+            <strong><span id="roundingDiff">-</span> AUD</strong>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer muted">
+        <p>
+          杠杆违规规则：当季 <code>Leverage &gt; 2.0</code> → 当季 <code>Credit=0</code>，且
+          <code>Contrib=min(100, CAP_Y_REMAIN)</code>（仍参与评分口径）。
+        </p>
+      </footer>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
+
