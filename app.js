@@ -31,6 +31,7 @@
     calcBtn: document.getElementById("calcBtn"),
     errors: document.getElementById("errors"),
     potValue: document.getElementById("potValue"),
+    roundingDiff: document.getElementById("roundingDiff"),
   };
 
   function initConstantsView() {
@@ -279,35 +280,35 @@
     const contribInt = contribFloat.map((x) => roundInt(x));
     const contribSumFloat = contribFloat.reduce((a, b) => a + b, 0);
     const Pot = contribInt.reduce((a, b) => a + b, 0);
+    // Positive means extra collected due to rounding; negative means less collected.
+    const roundingDiff = Pot - contribSumFloat;
 
-    // Step 3: Credit weights in log-space.
-    // Rule: if someone contributes this quarter (Contrib > 0), they should NOT receive Credit.
-    // Leverage violators also receive 0 credit.
+    // Step 3: Credit weights in log-space; leverage violators get 0 weight.
     const z = stats.map((s) => (s.lnP - C) / D);
     let creditW = stableSoftmax(z, PARAMS.k_credit);
-
-    const eligibleReceivers = stats
-      .map((s, i) => (!s.isLeverageViolation && contribInt[i] === 0 ? i : -1))
-      .filter((i) => i >= 0);
-
-    creditW = creditW.map((w, i) => (eligibleReceivers.includes(i) ? w : 0));
+    creditW = creditW.map((w, i) => (stats[i].isLeverageViolation ? 0 : w));
     const wSum = creditW.reduce((a, b) => a + b, 0);
     if (wSum > 0) creditW = creditW.map((w) => w / wSum);
 
     const creditFloat = creditW.map((w) => Pot * w);
-    let creditInt = allocateIntegersByRemainder(Pot, creditFloat);
+    const creditInt = allocateIntegersByRemainder(Pot, creditFloat);
 
-    // Enforce eligibility strictly.
-    creditInt = creditInt.map((v, i) => (eligibleReceivers.includes(i) ? v : 0));
+    // Ensure violators credit is exactly 0.
+    stats.forEach((s, i) => {
+      if (s.isLeverageViolation) creditInt[i] = 0;
+    });
 
-    // If integer rounding / enforcement breaks sum (edge), re-allocate among eligible receivers.
+    // If forcing violators to 0 breaks sum (edge), fix by re-allocating among non-violators.
     const sumCredit = creditInt.reduce((a, b) => a + b, 0);
-    if (sumCredit !== Pot && eligibleReceivers.length > 0) {
-      const eligibleFloats = eligibleReceivers.map((i) => creditFloat[i]);
+    if (sumCredit !== Pot) {
+      const eligible = stats.map((s, i) => (!s.isLeverageViolation ? i : -1)).filter((i) => i >= 0);
+      const eligibleFloats = eligible.map((i) => creditFloat[i]);
       const eligibleAlloc = allocateIntegersByRemainder(Pot, eligibleFloats);
-      creditInt = creditInt.map((_) => 0);
-      eligibleReceivers.forEach((idx, j) => {
+      eligible.forEach((idx, j) => {
         creditInt[idx] = eligibleAlloc[j];
+      });
+      stats.forEach((s, i) => {
+        if (s.isLeverageViolation) creditInt[i] = 0;
       });
     }
 
@@ -333,6 +334,7 @@
     });
 
     el.potValue.textContent = String(Pot);
+    el.roundingDiff.textContent = fmt(roundingDiff, 3);
   }
 
   // ===== Boot =====
