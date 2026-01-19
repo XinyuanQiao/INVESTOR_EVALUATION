@@ -4,7 +4,7 @@
 
 ## 关键口径（已按你的规则写死）
 
-- **n 已调整为 6**：因此 `PotTarget = 60 × n = 360`。
+- **n 已调整为 6**：本季 `PotTarget` 固定为 `500`。
 - **季度计算**：当季 `R / MDD` → `P`（含稳健标准化的 `median/MAD`）。
 - **年度计算（仅用于封顶）**：`CAP_Y=500`，每人需输入本年度已累计贡献 `YTD_Contrib`，用于 `CAP_Y_REMAIN = 500 - YTD_Contrib` 的封顶。
 - **杠杆硬规则**：当季 `Leverage > 2.0` → `Credit = 0`，且 `Contrib = min(100, CAP_Y_REMAIN)`（仍参与评分口径）。

@@ -8,7 +8,7 @@
     n: 6,
     CAP_Q: 100,
     CAP_Y: 500,
-    PotTarget: 60 * 6,
+    PotTarget: 500,
     // Score parameters
     score_a: 1.2,
     score_c: 2.0,
