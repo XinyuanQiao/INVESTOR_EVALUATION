@@ -26,6 +26,7 @@
     nValue: document.getElementById("nValue"),
     potTargetValue: document.getElementById("potTargetValue"),
     capValue: document.getElementById("capValue"),
+    yearStart: document.getElementById("yearStart"),
     settlementDate: document.getElementById("settlementDate"),
     tbody: document.getElementById("tbody"),
     addRowBtn: document.getElementById("addRowBtn"),
@@ -37,7 +38,7 @@
   function initConstantsView() {
     el.nValue.textContent = String(PARAMS.n);
     el.potTargetValue.textContent = String(PARAMS.PotTarget);
-    el.capValue.textContent = `${PARAMS.CAP_Q} / ${PARAMS.CAP_Y}`;
+    el.capValue.textContent = `${PARAMS.CAP_Q}`;
   }
 
   // ===== Utilities =====
@@ -114,17 +115,26 @@
   }
 
   function getAnnualizationPower() {
-    // If settlement date is provided, annualize by actual days from quarter start to settlement date.
-    // Otherwise fall back to quarterly annualization (4 quarters/year).
-    const d = parseDateInput(el.settlementDate?.value);
-    if (!d) return 4;
+    // If yearStart + settlementDate are provided, annualize by actual days between them.
+    // Otherwise, if only settlementDate is provided, annualize by actual days from quarter start.
+    // If none provided, fall back to quarterly annualization (4 quarters/year).
+    const end = parseDateInput(el.settlementDate?.value);
+    if (!end) return 4;
 
-    const y = d.getFullYear();
-    const m = d.getMonth(); // 0-11
+    const start = parseDateInput(el.yearStart?.value);
+    const msPerDay = 24 * 60 * 60 * 1000;
+
+    if (start && end.getTime() >= start.getTime()) {
+      const days = Math.floor((end.getTime() - start.getTime()) / msPerDay) + 1;
+      if (!Number.isFinite(days) || days <= 0) return 4;
+      return 365 / days;
+    }
+
+    const y = end.getFullYear();
+    const m = end.getMonth(); // 0-11
     const qStartMonth = Math.floor(m / 3) * 3;
     const qStart = new Date(y, qStartMonth, 1);
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const days = Math.floor((d.getTime() - qStart.getTime()) / msPerDay) + 1;
+    const days = Math.floor((end.getTime() - qStart.getTime()) / msPerDay) + 1;
     if (!Number.isFinite(days) || days <= 0) return 4;
     return 365 / days;
   }
@@ -149,14 +159,11 @@
       <td><input class="small" placeholder="0.06" /></td>
       <td><input class="small" placeholder="0.08" /></td>
       <td><input class="small" placeholder="1.0" /></td>
-      <td><input class="small" placeholder="0" /></td>
       <td class="out" data-out="Ann">-</td>
       <td class="out" data-out="Calmar">-</td>
       <td class="out" data-out="P">-</td>
       <td class="out" data-out="Contrib">-</td>
       <td class="out" data-out="Net">-</td>
-      <td class="out" data-out="YTD_After">-</td>
-      <td class="out" data-out="CAP_Remain_After">-</td>
       <td class="out" data-out="Flags">-</td>
     `;
 
@@ -171,7 +178,6 @@
       inputs[1].value = String(preset.R ?? "");
       inputs[2].value = String(preset.MDD ?? "");
       inputs[3].value = String(preset.Leverage ?? "");
-      inputs[4].value = String(preset.YTD_Contrib ?? "");
     }
 
     return tr;
@@ -180,11 +186,11 @@
   function seedRows() {
     // Default example rows (from the original Case 1).
     const defaults = [
-      { name: "A", R: 0.06, MDD: 0.06, Leverage: 1, YTD_Contrib: 0 },
-      { name: "B", R: 0.03, MDD: 0.08, Leverage: 1, YTD_Contrib: 0 },
-      { name: "C", R: 0.01, MDD: 0.03, Leverage: 1, YTD_Contrib: 0 },
-      { name: "E", R: 0.02, MDD: 0.09, Leverage: 1, YTD_Contrib: 0 },
-      { name: "D", R: -0.04, MDD: 0.12, Leverage: 1, YTD_Contrib: 0 },
+      { name: "A", R: 0.06, MDD: 0.06, Leverage: 1 },
+      { name: "B", R: 0.03, MDD: 0.08, Leverage: 1 },
+      { name: "C", R: 0.01, MDD: 0.03, Leverage: 1 },
+      { name: "E", R: 0.02, MDD: 0.09, Leverage: 1 },
+      { name: "D", R: -0.04, MDD: 0.12, Leverage: 1 },
     ];
     defaults.forEach((row) => el.tbody.appendChild(makeRow(row)));
   }
@@ -197,8 +203,7 @@
       const R = toNumberOrNaN(inputs[1].value);
       const MDD = toNumberOrNaN(inputs[2].value);
       const Leverage = toNumberOrNaN(inputs[3].value);
-      const YTD_Contrib = toNumberOrNaN(inputs[4].value);
-      return { tr, name, R, MDD, Leverage, YTD_Contrib };
+      return { tr, name, R, MDD, Leverage };
     });
   }
 
@@ -221,15 +226,12 @@
     if (!isFiniteNumber(row.R)) errs.push(`第 ${idx + 1} 行：R 不是数字`);
     if (!isFiniteNumber(row.MDD)) errs.push(`第 ${idx + 1} 行：MDD 不是数字`);
     if (!isFiniteNumber(row.Leverage)) errs.push(`第 ${idx + 1} 行：Leverage 不是数字`);
-    if (!isFiniteNumber(row.YTD_Contrib)) errs.push(`第 ${idx + 1} 行：YTD_Contrib 不是数字`);
 
     if (isFiniteNumber(row.R) && row.R <= -1) errs.push(`第 ${idx + 1} 行：R 必须 > -1`);
     if (isFiniteNumber(row.MDD) && (row.MDD < 0 || row.MDD > 1.5))
       errs.push(`第 ${idx + 1} 行：MDD 建议在 0~1 之间（小数）`);
     if (isFiniteNumber(row.Leverage) && row.Leverage < 0)
       errs.push(`第 ${idx + 1} 行：Leverage 必须 >= 0`);
-    if (isFiniteNumber(row.YTD_Contrib) && row.YTD_Contrib < 0)
-      errs.push(`第 ${idx + 1} 行：YTD_Contrib 必须 >= 0`);
 
     return errs;
   }
@@ -277,9 +279,7 @@
       leaderCount = 1;
     }
 
-    // Step 2: Contrib (raw, then caps), with leverage override
-    const capRemain = stats.map((s) => Math.max(0, PARAMS.CAP_Y - s.YTD_Contrib));
-
+    // Step 2: Contrib (raw, then CAP_Q), with leverage override
     const contribFloat = stats.map(() => 0);
 
     const S = stats
@@ -305,7 +305,7 @@
 
       S.forEach((idx, j) => {
         const raw = PARAMS.PotTarget * wPrimeS[j];
-        const capped = Math.min(raw, PARAMS.CAP_Q, capRemain[idx]);
+        const capped = Math.min(raw, PARAMS.CAP_Q);
         contribFloat[idx] = capped;
       });
     }
@@ -314,7 +314,7 @@
     // Leverage override: fixed contrib and credit=0 later.
     stats.forEach((s, i) => {
       if (s.isLeverageViolation) {
-        contribFloat[i] = Math.min(PARAMS.CAP_Q, capRemain[i]);
+        contribFloat[i] = PARAMS.CAP_Q;
       }
     });
 
@@ -352,8 +352,6 @@
     }
 
     const netInt = creditInt.map((c, i) => c - contribInt[i]);
-    const ytdAfter = stats.map((s, i) => s.YTD_Contrib - netInt[i]);
-    const capRemainAfter = ytdAfter.map((y) => Math.max(0, PARAMS.CAP_Y - y));
 
     // Step 4: Render
     stats.forEach((s, i) => {
@@ -362,8 +360,6 @@
       setOut(s.tr, "P", fmt(s.P, 3));
       setOut(s.tr, "Contrib", String(contribInt[i]));
       setOut(s.tr, "Net", String(netInt[i]));
-      setOut(s.tr, "YTD_After", String(ytdAfter[i]));
-      setOut(s.tr, "CAP_Remain_After", String(capRemainAfter[i]));
 
       const flags = [];
       if (isLeaderByIdx[i]) flags.push(`Leader${leaderCount > 1 ? "(tie)" : ""}`);

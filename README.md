@@ -1,13 +1,12 @@
 # 投资群季度奖惩与资金支配规则（Calmar）计算器
 
-一个**纯静态网页**的小工具：输入每个人的当季 `R/MDD/Leverage` 与本年度已累计贡献 `YTD_Contrib`，自动计算 `P / Contrib / Credit / Net`。
+一个**纯静态网页**的小工具：输入每个人的当季 `R/MDD/Leverage`，自动计算 `P / Contrib / Credit / Net`。
 
 ## 关键口径（已按你的规则写死）
 
 - **n 已调整为 6**：本季 `PotTarget` 固定为 `500`。
 - **季度计算**：当季 `R / MDD` → `P`（含稳健标准化的 `median/MAD`）。如填写“本季结算日”，则年化按该季度起始日至结算日的实际天数计算。
-- **年度计算（仅用于封顶）**：`CAP_Y=500`，每人需输入本年度已累计贡献 `YTD_Contrib`，用于 `CAP_Y_REMAIN = 500 - YTD_Contrib` 的封顶。
-- **杠杆硬规则**：当季 `Leverage > 2.0` → `Credit = 0`，且 `Contrib = min(100, CAP_Y_REMAIN)`（仍参与评分口径）。
+- **杠杆硬规则**：当季 `Leverage > 2.0` → `Credit = 0`，且 `Contrib = 100`（仍参与评分口径）。
 - **金额取整**：`Contrib` 与 `Credit` 四舍五入到整数 AUD。`Credit` 使用“整数分配法”保证 `sum(Credit) = Pot`。
 
 ## 使用方式
@@ -16,7 +15,6 @@
 
 输入提示：
 - `R` 和 `MDD` 用小数输入（例如 6% 写 `0.06`）。
-- `YTD_Contrib` 是从你设定的“本年度起始日期”到上季末的累计贡献（AUD，整数或小数均可）。
 
 ## GitHub Pages（零成本公开访问）
 

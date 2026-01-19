@@ -12,7 +12,7 @@
         <h1>投资群季度奖惩与资金支配规则（Calmar）计算器</h1>
         <p class="muted">
           说明：收益率 <code>R</code> 与回撤 <code>MDD</code> 请用“小数”输入（例如 6% 写 <code>0.06</code>）。
-          年度口径：每人需填写本年度已累计贡献（YTD_Contrib），用于年度上限 <code>CAP_Y=500</code> 的剩余额度封顶。
+          如填写“本年度起始日期 + 本季结算日”，则年化按这两个日期的实际天数计算；否则默认按季度年化（×4）。
         </p>
       </header>
 
@@ -36,7 +36,7 @@
             <div class="value"><code id="potTargetValue"></code> AUD</div>
           </div>
           <div class="field readonly">
-            <span>CAP_Q / CAP_Y</span>
+            <span>CAP_Q</span>
             <div class="value"><code id="capValue"></code> AUD</div>
           </div>
           <div class="field readonly">
@@ -64,14 +64,11 @@
                 <th>R</th>
                 <th>MDD</th>
                 <th>Leverage</th>
-                <th>YTD_Contrib</th>
                 <th>Ann</th>
                 <th>Calmar</th>
                 <th>P</th>
                 <th>Contrib (AUD)</th>
                 <th>Net (AUD)</th>
-                <th>YTD_Contrib_After</th>
-                <th>CAP_Y_REMAIN_After</th>
                 <th>Flags</th>
               </tr>
             </thead>
