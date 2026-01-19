@@ -31,7 +31,6 @@
     calcBtn: document.getElementById("calcBtn"),
     errors: document.getElementById("errors"),
     potValue: document.getElementById("potValue"),
-    roundingDiff: document.getElementById("roundingDiff"),
   };
 
   function initConstantsView() {
@@ -131,7 +130,6 @@
       <td class="out" data-out="Calmar">-</td>
       <td class="out" data-out="P">-</td>
       <td class="out" data-out="Contrib">-</td>
-      <td class="out" data-out="Credit">-</td>
       <td class="out" data-out="Net">-</td>
       <td class="out" data-out="YTD_After">-</td>
       <td class="out" data-out="CAP_Remain_After">-</td>
@@ -280,8 +278,6 @@
     const contribInt = contribFloat.map((x) => roundInt(x));
     const contribSumFloat = contribFloat.reduce((a, b) => a + b, 0);
     const Pot = contribInt.reduce((a, b) => a + b, 0);
-    // Positive means extra collected due to rounding; negative means less collected.
-    const roundingDiff = Pot - contribSumFloat;
 
     // Step 3: Credit weights in log-space; leverage violators get 0 weight.
     const z = stats.map((s) => (s.lnP - C) / D);
@@ -313,7 +309,7 @@
     }
 
     const netInt = creditInt.map((c, i) => c - contribInt[i]);
-    const ytdAfter = stats.map((s, i) => s.YTD_Contrib + contribInt[i]);
+    const ytdAfter = stats.map((s, i) => s.YTD_Contrib - netInt[i]);
     const capRemainAfter = ytdAfter.map((y) => Math.max(0, PARAMS.CAP_Y - y));
 
     // Step 4: Render
@@ -322,7 +318,6 @@
       setOut(s.tr, "Calmar", fmt(s.Calmar, 3));
       setOut(s.tr, "P", fmt(s.P, 3));
       setOut(s.tr, "Contrib", String(contribInt[i]));
-      setOut(s.tr, "Credit", String(creditInt[i]));
       setOut(s.tr, "Net", String(netInt[i]));
       setOut(s.tr, "YTD_After", String(ytdAfter[i]));
       setOut(s.tr, "CAP_Remain_After", String(capRemainAfter[i]));
@@ -334,7 +329,6 @@
     });
 
     el.potValue.textContent = String(Pot);
-    el.roundingDiff.textContent = fmt(roundingDiff, 3);
   }
 
   // ===== Boot =====
