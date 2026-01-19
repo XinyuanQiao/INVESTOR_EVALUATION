@@ -141,7 +141,7 @@
   }
 
   // ===== Table rows =====
-  function makeRow() {
+  function makeRow(preset = null) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td><button type="button" class="dangerBtn" title="删除">×</button></td>
@@ -164,12 +164,29 @@
       tr.remove();
     });
 
+    // Apply preset inputs for default examples.
+    if (preset) {
+      const inputs = tr.querySelectorAll("input");
+      inputs[0].value = String(preset.name ?? "");
+      inputs[1].value = String(preset.R ?? "");
+      inputs[2].value = String(preset.MDD ?? "");
+      inputs[3].value = String(preset.Leverage ?? "");
+      inputs[4].value = String(preset.YTD_Contrib ?? "");
+    }
+
     return tr;
   }
 
   function seedRows() {
-    // Minimal initial rows for convenience.
-    for (let i = 0; i < 5; i += 1) el.tbody.appendChild(makeRow());
+    // Default example rows (from the original Case 1).
+    const defaults = [
+      { name: "A", R: 0.06, MDD: 0.06, Leverage: 1, YTD_Contrib: 0 },
+      { name: "B", R: 0.03, MDD: 0.08, Leverage: 1, YTD_Contrib: 0 },
+      { name: "C", R: 0.01, MDD: 0.03, Leverage: 1, YTD_Contrib: 0 },
+      { name: "E", R: 0.02, MDD: 0.09, Leverage: 1, YTD_Contrib: 0 },
+      { name: "D", R: -0.04, MDD: 0.12, Leverage: 1, YTD_Contrib: 0 },
+    ];
+    defaults.forEach((row) => el.tbody.appendChild(makeRow(row)));
   }
 
   function getRows() {
